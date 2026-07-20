@@ -1,151 +1,97 @@
 import streamlit as st
 import pandas as pd
-import math
-from pathlib import Path
 
-# Set the title and favicon that appear in the Browser's tab bar.
 st.set_page_config(
-    page_title='GDP dashboard',
-    page_icon=':earth_americas:', # This is an emoji shortcode. Could be a URL too.
+    page_title="Streamlit 요소 예시",
+    page_icon="✨",
+    layout="wide",
 )
 
-# -----------------------------------------------------------------------------
-# Declare some useful functions.
+st.title("🎉 Streamlit 요소 예시 페이지")
+st.caption("한 페이지 안에서 다양한 Streamlit 위젯과 레이아웃을 보여주는 샘플입니다.")
 
-@st.cache_data
-def get_gdp_data():
-    """Grab GDP data from a CSV file.
+st.markdown("이 페이지는 텍스트, 버튼, 입력창, 선택 위젯, 탭, 아코디언, 차트, 테이블, 폼까지 한 번에 확인할 수 있도록 구성했습니다.")
 
-    This uses caching to avoid having to read the file every time. If we were
-    reading from an HTTP endpoint instead of a file, it's a good idea to set
-    a maximum age to the cache with the TTL argument: @st.cache_data(ttl='1d')
-    """
+with st.sidebar:
+    st.header("사이드바 위젯")
+    name = st.text_input("이름을 입력하세요", placeholder="홍길동")
+    color = st.selectbox("좋아하는 색상", ["파란색", "초록색", "노란색"])
+    interests = st.multiselect(
+        "관심 있는 분야",
+        ["데이터 분석", "AI", "웹 앱", "자동화"],
+        default=["데이터 분석", "웹 앱"],
+    )
+    is_subscribed = st.checkbox("뉴스레터 구독")
+    difficulty = st.slider("난이도", 1, 10, 5)
 
-    # Instead of a CSV on disk, you could read from an HTTP endpoint here too.
-    DATA_FILENAME = Path(__file__).parent/'data/gdp_data.csv'
-    raw_gdp_df = pd.read_csv(DATA_FILENAME)
+    st.markdown("---")
+    st.info(f"입력값 요약: {name} / {color} / {', '.join(interests) or '없음'}")
 
-    MIN_YEAR = 1960
-    MAX_YEAR = 2022
+col1, col2, col3, col4 = st.columns(4)
+with col1:
+    st.metric("조회수", "1,234", "+12%")
+with col2:
+    st.metric("사용자", "89", "+4%")
+with col3:
+    st.metric("완료율", "76%", "-2%")
+with col4:
+    st.metric("평균 응답시간", "1.2s", "-0.1s")
 
-    # The data above has columns like:
-    # - Country Name
-    # - Country Code
-    # - [Stuff I don't care about]
-    # - GDP for 1960
-    # - GDP for 1961
-    # - GDP for 1962
-    # - ...
-    # - GDP for 2022
-    #
-    # ...but I want this instead:
-    # - Country Name
-    # - Country Code
-    # - Year
-    # - GDP
-    #
-    # So let's pivot all those year-columns into two: Year and GDP
-    gdp_df = raw_gdp_df.melt(
-        ['Country Code'],
-        [str(x) for x in range(MIN_YEAR, MAX_YEAR + 1)],
-        'Year',
-        'GDP',
+st.markdown("---")
+
+if st.button("클릭해 보세요"):
+    st.success("버튼이 눌렸습니다!")
+
+st.subheader("탭으로 섹션 나누기")
+
+tab1, tab2, tab3 = st.tabs(["텍스트", "테이블", "차트"])
+
+with tab1:
+    st.write("이곳은 기본 텍스트와 코드 블록을 보여주는 영역입니다.")
+    st.code("import streamlit as st\nst.write('Hello, Streamlit!')", language="python")
+    st.json({"name": name, "color": color, "difficulty": difficulty})
+
+with tab2:
+    sample_df = pd.DataFrame(
+        {
+            "이름": ["Alice", "Bob", "Charlie"],
+            "점수": [90, 85, 88],
+            "등급": ["A", "B", "B"],
+        }
+    )
+    st.dataframe(sample_df, use_container_width=True)
+    st.download_button(
+        label="CSV로 다운로드",
+        data=sample_df.to_csv(index=False),
+        file_name="sample_data.csv",
+        mime="text/csv",
     )
 
-    # Convert years from string to integers
-    gdp_df['Year'] = pd.to_numeric(gdp_df['Year'])
+with tab3:
+    chart_df = pd.DataFrame(
+        {
+            "월": ["1월", "2월", "3월", "4월", "5월"],
+            "매출": [20, 35, 28, 40, 55],
+            "목표": [25, 30, 30, 35, 50],
+        }
+    )
+    st.line_chart(chart_df.set_index("월"))
 
-    return gdp_df
+st.markdown("---")
 
-gdp_df = get_gdp_data()
+with st.expander("추가 정보 보기"):
+    st.write("아코디언 안에 설명, 참고 링크, 또는 작은 예제를 넣을 수 있습니다.")
+    st.link_button("Streamlit 공식 문서", "https://docs.streamlit.io/")
 
-# -----------------------------------------------------------------------------
-# Draw the actual page
+st.subheader("폼 예제")
+with st.form("demo_form"):
+    feedback = st.text_area("의견을 남겨주세요", placeholder="예: 페이지 구성이 깔끔합니다.")
+    submitted = st.form_submit_button("제출")
 
-# Set the title that appears at the top of the page.
-'''
-# :earth_americas: GDP dashboard
+    if submitted:
+        st.success(f"제출 완료: {feedback}")
 
-Browse GDP data from the [World Bank Open Data](https://data.worldbank.org/) website. As you'll
-notice, the data only goes to 2022 right now, and datapoints for certain years are often missing.
-But it's otherwise a great (and did I mention _free_?) source of data.
-'''
+st.markdown("---")
 
-# Add some spacing
-''
-''
-
-min_value = gdp_df['Year'].min()
-max_value = gdp_df['Year'].max()
-
-from_year, to_year = st.slider(
-    'Which years are you interested in?',
-    min_value=min_value,
-    max_value=max_value,
-    value=[min_value, max_value])
-
-countries = gdp_df['Country Code'].unique()
-
-if not len(countries):
-    st.warning("Select at least one country")
-
-selected_countries = st.multiselect(
-    'Which countries would you like to view?',
-    countries,
-    ['DEU', 'FRA', 'GBR', 'BRA', 'MEX', 'JPN'])
-
-''
-''
-''
-
-# Filter the data
-filtered_gdp_df = gdp_df[
-    (gdp_df['Country Code'].isin(selected_countries))
-    & (gdp_df['Year'] <= to_year)
-    & (from_year <= gdp_df['Year'])
-]
-
-st.header('GDP over time', divider='gray')
-
-''
-
-st.line_chart(
-    filtered_gdp_df,
-    x='Year',
-    y='GDP',
-    color='Country Code',
-)
-
-''
-''
-
-
-first_year = gdp_df[gdp_df['Year'] == from_year]
-last_year = gdp_df[gdp_df['Year'] == to_year]
-
-st.header(f'GDP in {to_year}', divider='gray')
-
-''
-
-cols = st.columns(4)
-
-for i, country in enumerate(selected_countries):
-    col = cols[i % len(cols)]
-
-    with col:
-        first_gdp = first_year[first_year['Country Code'] == country]['GDP'].iat[0] / 1000000000
-        last_gdp = last_year[last_year['Country Code'] == country]['GDP'].iat[0] / 1000000000
-
-        if math.isnan(first_gdp):
-            growth = 'n/a'
-            delta_color = 'off'
-        else:
-            growth = f'{last_gdp / first_gdp:,.2f}x'
-            delta_color = 'normal'
-
-        st.metric(
-            label=f'{country} GDP',
-            value=f'{last_gdp:,.0f}B',
-            delta=growth,
-            delta_color=delta_color
-        )
+st.warning("이 페이지는 예시용으로 구성된 샘플입니다.")
+st.success("필요하면 이 예시를 바탕으로 실제 앱으로 확장할 수 있습니다.")
